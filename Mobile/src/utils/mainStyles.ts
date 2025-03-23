@@ -49,6 +49,11 @@ const mainStyles = StyleSheet.create({
     borderRadius: 15,
     marginHorizontal: 5,
     flex: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sensorValue: {
     textAlign: "center",
@@ -57,7 +62,6 @@ const mainStyles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4CAF50",
   },
-  // 🆕 Added styles for messageContainer and messageText
   messageContainer: {
     marginVertical: 10,
     padding: 15,
@@ -69,6 +73,47 @@ const mainStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#388E3C", // Dark green text
+  },
+  timeSchedulerContainer: {
+    marginVertical: 10,
+    backgroundColor: "#E3F2FD",
+    padding: 20,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  timePicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  timeText: {
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  input: {
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    paddingVertical: 5,
+    fontSize: 16,
+    width: "50%",
+    textAlign: "center",
+  },
+  buttonSwitchContainer: {
+    marginVertical: 10,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonSwitchText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
   },
 });
 
