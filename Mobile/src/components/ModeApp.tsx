@@ -12,11 +12,11 @@ const ModeApp = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setData({
-        temperature: Math.floor(Math.random() * 10) + 20, // Random temp (20-30°C)
-        humidity: Math.floor(Math.random() * 20) + 50, // Random humidity (50-70%)
-        airQuality: Math.floor(Math.random() * 50) + 50, // Random AQI (50-100)
+        temperature: Math.floor(Math.random() * 10) + 20,
+        humidity: Math.floor(Math.random() * 20) + 50,
+        airQuality: Math.floor(Math.random() * 50) + 50,
       });
-    }, 3000); // Update every 3 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -40,8 +40,8 @@ const ModeApp = () => {
           barPercentage: 0.5,
           fillShadowGradientOpacity: 1,
           fillShadowGradientFromOpacity: 1,
-          fillShadowGradientFrom: "#ff5733", // Temperature (Red)
-          fillShadowGradientTo: "#33a1ff", // Humidity (Blue)
+          fillShadowGradientFrom: "#ff5733",
+          fillShadowGradientTo: "#33a1ff", 
           fillShadowGradientToOpacity: 0.8,
         }}
         style={{ borderRadius: 10 }}
