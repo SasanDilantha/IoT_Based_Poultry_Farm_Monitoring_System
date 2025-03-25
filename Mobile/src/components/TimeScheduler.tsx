@@ -4,6 +4,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import Icon2 from "react-native-vector-icons/MaterialCommunityIcons";
 
+
+const SERVER_URL = "http://192.168.171.15:5000";
 interface TimeSchedulerProps {
     onTimeChange: (time: Date) => void;
 }
@@ -26,6 +28,19 @@ const TimeScheduler = ({ onTimeChange }: TimeSchedulerProps) => {
         const minutes = date.getMinutes();
         return `${hours < 10 ? "0" : ""}${hours}:${minutes < 10 ? "0" : ""}${minutes}`;
     };
+
+    // set time
+    const setFeedTime = async () => {
+        try {
+          await fetch(`${SERVER_URL}/set_feed_time`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({"feed_time": time }),
+          });
+        } catch (error) {
+          console.error("Error updating fan status:", error);
+        }
+      };
 
     return (
         <View style={styles.card}>

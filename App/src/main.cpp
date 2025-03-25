@@ -5,13 +5,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <AHT10.h>
-#include <Servo.h>
+#include <ESP32Servo.h>
 #include <FS.h>
 #include <SPIFFS.h>
 
 #define WIFI_SSID "Xperia_3309"
-#define WIFI_PASSWORD "ds516dila"
-#define SERVER_URL "http://192.168.64.44:5000"
+#define WIFI_PASSWORD "ds121098"
+#define SERVER_URL "http://192.168.171.15:5000"
 #define FAN_PIN 5
 #define HIGH_TEMP_THRESHOLD 30.0
 #define LOW_TEMP_THRESHOLD 25.0
@@ -24,14 +24,23 @@ Servo feedGate;
 bool manualFanControl = false;
 bool fanStatus = false;
 
+
 void connectWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED) {
+    int attempt = 0;
+    while (WiFi.status() != WL_CONNECTED && attempt < 20) {  // Try for ~20 seconds
         delay(1000);
         Serial.println("Connecting to WiFi...");
+        attempt++;
     }
-    Serial.println("Connected to WiFi");
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("Connected to WiFi");
+    } else {
+        Serial.println("Failed to connect to WiFi. Continuing without it...");
+    }
 }
+
 
 void initSensors() {
     while (!aht.begin()) {
@@ -69,8 +78,14 @@ void toggleFan(bool state) {
 }
 
 String sendData(float temp, float humidity, float airQuality) {
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("WiFi not connected, skipping data send");
+        return "No WiFi";
+    }
+
     HTTPClient http;
-    http.begin(String(SERVER_URL) + "/data");
+    String url = String(SERVER_URL) + "/data";
+    http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
     String jsonPayload = "{";
@@ -82,6 +97,7 @@ String sendData(float temp, float humidity, float airQuality) {
 
     int httpResponseCode = http.POST(jsonPayload);
     Serial.println("Data Sent. Response: " + String(httpResponseCode));
+
     http.end();
     return (httpResponseCode == 200) ? "Success" : "Failed";
 }
@@ -97,6 +113,11 @@ void showData(float temp, float humidity, float airQuality, String message) {
 }
 
 void checkFeedTime() {
+    if (!SPIFFS.exists("/feed_time.txt")) {
+        Serial.println("Feed time file not found. Using default time: 08:00");
+        return;
+    }
+
     File file = SPIFFS.open("/feed_time.txt", "r");
     if (!file) {
         Serial.println("Failed to open feed_time.txt");
@@ -124,6 +145,7 @@ void checkFeedTime() {
         feedGate.write(0);
     }
 }
+
 
 void setup() {
     Serial.begin(115200);
