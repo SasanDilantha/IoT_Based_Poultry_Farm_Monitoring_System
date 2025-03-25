@@ -6,24 +6,47 @@ app = Flask(__name__)
 
 FEED_TIME_FILE = Path('../Common/feed_time.txt')
 
+data_store = {
+    "temperature": None,
+    "humidity": None,
+    "airQuality": None,
+    "fanStatus": False
+}
+
 # Test App
 @app.route('/test', methods=['POST'])
 def app_test():
     return jsonify({"message": "Successfully Start Flask app for IOT system"}), 200
 
-# Receive Sensor Data
 @app.route("/data", methods=["POST"])
 def receive_data():
-    global latest_data
-    data = request.json
-    latest_data.update(data)
-    print("Received Data:", latest_data)
-    return jsonify({"message": "Data received successfully"}), 200
+    try:
+        data = request.get_json()
+        data_store["temperature"] = data.get("temperature")
+        data_store["humidity"] = data.get("humidity")
+        data_store["airQuality"] = data.get("airQuality")
+        data_store["fanStatus"] = data.get("fanStatus")
+        
+        return jsonify({"message": "Data received successfully", "data": data_store}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
-# Get Latest Sensor Data
-@app.route("/data", methods=["GET"])
-def get_data():
-    return jsonify(latest_data)
+@app.route("/status", methods=["GET"])
+def get_status():
+    return jsonify(data_store)
+
+@app.route("/fan", methods=["POST"])
+def control_fan():
+    try:
+        data = request.get_json()
+        fan_status = data.get("fanStatus")
+        if fan_status is not None:
+            data_store["fanStatus"] = fan_status
+            return jsonify({"message": "Fan status updated", "fanStatus": fan_status}), 200
+        else:
+            return jsonify({"error": "Invalid data"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 # API to set feed time from mobile app
