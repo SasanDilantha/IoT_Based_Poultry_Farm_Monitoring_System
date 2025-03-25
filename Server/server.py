@@ -4,7 +4,7 @@ from pathlib import Path
 
 app = Flask(__name__)
 
-FEED_TIME_FILE = Path('../Common/feed_time.txt')
+FEED_TIME_FILE = Path('../App/src/feed_time.txt')
 
 data_store = {
     "temperature": None,

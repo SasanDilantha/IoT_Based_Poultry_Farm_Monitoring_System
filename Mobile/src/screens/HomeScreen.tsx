@@ -6,7 +6,7 @@ import mainStyles from "../utils/mainStyles";
 import ModeApp from "../components/ModeApp";
 import TimeScheduler from "../components/TimeScheduler";
 
-const SERVER_URL = "http://192.168.64.44:5000";
+const SERVER_URL = "http://192.168.171.15:5000";
 
 const HomeScreen = () => {
   const [fanOn, setFanOn] = useState(false);
