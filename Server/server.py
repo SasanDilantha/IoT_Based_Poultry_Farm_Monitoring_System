@@ -1,15 +1,29 @@
 from flask import Flask, request, jsonify
 import os
+from pathlib import Path
 
 app = Flask(__name__)
 
-FEED_TIME_FILE = "feed_time.txt"
+FEED_TIME_FILE = Path('../Common/feed_time.txt')
 
 # Test App
 @app.route('/test', methods=['POST'])
 def app_test():
     return jsonify({"message": "Successfully Start Flask app for IOT system"}), 200
 
+# Receive Sensor Data
+@app.route("/data", methods=["POST"])
+def receive_data():
+    global latest_data
+    data = request.json
+    latest_data.update(data)
+    print("Received Data:", latest_data)
+    return jsonify({"message": "Data received successfully"}), 200
+
+# Get Latest Sensor Data
+@app.route("/data", methods=["GET"])
+def get_data():
+    return jsonify(latest_data)
 
 
 # API to set feed time from mobile app

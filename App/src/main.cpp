@@ -6,117 +6,78 @@
 #include <Adafruit_SSD1306.h>
 #include <AHT10.h>
 
-class WiFiManager {
-private:
-    const char* ssid;
-    const char* password;
-public:
-    WiFiManager(const char* ssid, const char* password) : ssid(ssid), password(password) {}
-    void connect() {
-        WiFi.begin(ssid, password);
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(1000);
-            Serial.println("Connecting to WiFi...");
-        }
-        Serial.println("Connected to WiFi");
+#define WIFI_SSID "Xperia_3309"
+#define WIFI_PASSWORD "ds516dila"
+#define SERVER_URL "http://192.168.64.44:5000"
+
+AHT10 aht(AHT10_ADDRESS_0X38, AHT10_SENSOR);
+MQ135 mq135_sensor(34);
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+
+void connectWiFi() {
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Connecting to WiFi...");
     }
-    bool isConnected() {
-        return WiFi.status() == WL_CONNECTED;
+    Serial.println("Connected to WiFi");
+}
+
+void initSensors() {
+    while (!aht.begin()) {
+        Serial.println("AHT10 not connected or failed to load calibration");
+        delay(3000);
     }
-};
+}
 
-class SensorManager {
-private:
-    AHT10 aht;  // Fixed initialization
-    MQ135 mq135_sensor;
-public:
-    SensorManager(uint8_t mq135Pin) : aht(AHT10_ADDRESS_0X38, AHT10_SENSOR), mq135_sensor(mq135Pin) {} // Corrected constructor
-
-    void begin() { 
-        while (!aht.begin()) {
-            Serial.println("AHT10 not connected or failed to load calibration");
-            delay(3000);
-        }
+void initDisplay() {
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        Serial.println("SSD1306 allocation failed");
+        for (;;);
     }
-    float getTemperature() { return aht.readTemperature(); }
-    float getHumidity() { return aht.readHumidity(); }
-    float getAirQuality() { return mq135_sensor.getCorrectedPPM(getTemperature(), getHumidity()); }
-};
+    display.display();
+    delay(2000);
+    display.clearDisplay();
+}
 
-class HttpClientMgr {
-private:
-    String serverUrl;
-public:
-    HttpClientMgr(String serverUrl) : serverUrl(serverUrl) {}
-    String sendData(float temp, float humidity, float airQuality) {
-        HTTPClient http;
-        String url = String(serverUrl) + "/update?temp=" + String(temp) + "&humidity=" + String(humidity) + "&ammonia=" + String(airQuality);
-        http.begin(url);
-        int httpCode = http.GET();
-        String response = (httpCode == 200) ? http.getString() : "No Response";
-        http.end();
-        return response;
-    }
-};
+String sendData(float temp, float humidity, float airQuality) {
+    HTTPClient http;
+    http.begin(String(SERVER_URL) + "/data");
+    http.addHeader("Content-Type", "application/json");
 
-class DisplayManager {
-private:
-    Adafruit_SSD1306 display;
-public:
-    DisplayManager(uint8_t width, uint8_t height, int8_t reset) : display(width, height, &Wire, reset) {}
-    
-    void begin() {
-        if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-            Serial.println("SSD1306 allocation failed");
-            for (;;);
-        }
-        display.display();
-        delay(2000);
-        display.clearDisplay();
-    }
+    String jsonPayload = "{";
+    jsonPayload += "\"temperature\":" + String(temp) + ",";
+    jsonPayload += "\"humidity\":" + String(humidity) + ",";
+    jsonPayload += "\"airQuality\":" + String(airQuality);
+    jsonPayload += "}";
 
-    void showData(float temp, float humidity, float airQuality, String message) {
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setTextColor(SSD1306_WHITE);
-        display.setCursor(0, 0);
-        display.printf("Temp: %.2f C\nHumidity: %.2f %%\nAir Q: %.2f PPM\nMsg: %s", temp, humidity, airQuality, message.c_str());
-        display.display();
-    }
-};
+    int httpResponseCode = http.POST(jsonPayload);
+    Serial.println("Data Sent. Response: " + String(httpResponseCode));
+    http.end();
+    return (httpResponseCode == 200) ? "Success" : "Failed";
+}
 
-class IoTController {
-private:
-    WiFiManager wifi;
-    SensorManager sensor;
-    DisplayManager display;
-    HttpClientMgr http;
-public:
-    IoTController() : wifi("Xperia_3309", "ds516dila"), sensor(34), display(128, 64, -1), http("http://192.168.64.44:5000") {} // Fixed constructor
-
-    void setup() {
-        Serial.begin(115200);
-        wifi.connect();
-        sensor.begin();
-        display.begin();
-    }
-
-    void loop() {
-        float temp = sensor.getTemperature();
-        float humidity = sensor.getHumidity();
-        float airQuality = sensor.getAirQuality();
-        String message = http.sendData(temp, humidity, airQuality);
-        display.showData(temp, humidity, airQuality, message);
-        delay(10000);
-    }
-};
-
-IoTController controller;
+void showData(float temp, float humidity, float airQuality, String message) {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.printf("Temp: %.2f C\nHumidity: %.2f %%\nAir Q: %.2f PPM\nMsg: %s", temp, humidity, airQuality, message.c_str());
+    display.display();
+}
 
 void setup() {
-    controller.setup();
+    Serial.begin(115200);
+    connectWiFi();
+    initSensors();
+    initDisplay();
 }
 
 void loop() {
-    controller.loop();
+    float temp = aht.readTemperature();
+    float humidity = aht.readHumidity();
+    float airQuality = mq135_sensor.getCorrectedPPM(temp, humidity);
+    String message = sendData(temp, humidity, airQuality);
+    showData(temp, humidity, airQuality, message);
+    delay(10000);
 }
